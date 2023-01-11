@@ -46,9 +46,9 @@ dsize <- read_table("https://www.prdh.umontreal.ca/BDLC/data/ont/Population.txt"
 
 colnames(dsize)[3:5] <- c("PopF", "PopM", "PopTotal")
 
-dtot <- left_join(dm, dsize, by = c("Year", "Age")) %>% mutate(DeathsF = (Female*PopF), DeathsM = (Male*PopM)) %>% group_by(Year) %>% summarise(TD_M = sum(DeathsM, na.rm = T), TD_F = sum(DeathsF, na.rm =T), PopTotal = sum(PopTotal, na.rm = T)) 
+dtot <- left_join(dm, dsize, by = c("Year", "Age")) %>% mutate(DeathsF = (Female*PopF), DeathsM = (Male*PopM)) %>% group_by(Year) %>% summarise(TD_M = sum(DeathsM, na.rm = T), TD_F = sum(DeathsF, na.rm =T), PopTotal_M = sum(PopM, na.rm = T), PopTotal_F = sum(PopF, na.rm = T)) 
 
-dw <- dtot %>% mutate(weighted_f = TD_F/PopTotal, weighted_m = TD_M/PopTotal)
+dw <- dtot %>% mutate(weighted_f = TD_F/PopTotal_F, weighted_m = TD_M/PopTotal_M)
 
 dw %>% pivot_longer(c(weighted_f, weighted_m), names_to = "Sex", values_to = "Weighted") %>% filter(Weighted != Inf) %>% ggplot(aes(x = Year, y = Weighted, colour = Sex)) + geom_line() +labs()
 ```
