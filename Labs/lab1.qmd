@@ -1,6 +1,6 @@
 ---
 title: "Lab1"
-format: html
+format: pdf
 editor: visual
 ---
 
