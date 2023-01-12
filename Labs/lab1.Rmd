@@ -68,7 +68,8 @@ colnames(dsize)[3:5] <- c("PopF", "PopM", "PopTotal")
 
 
 dtot <- left_join(dm %>% select(Male, Female, Year, Age), dsize %>% filter(Year!=2020), 
-                  by = c("Year", "Age")) %>% mutate(DeathsF = (Female*PopF), DeathsM = (Male*PopM)) %>% 
+                  by = c("Year", "Age")) %>% mutate(DeathsF = (Female*PopF), 
+                                                    DeathsM = (Male*PopM)) %>% 
   group_by(Year) %>% 
   summarise(across(c(DeathsF, DeathsM, PopF, PopM), sum, na.rm = T))
 
