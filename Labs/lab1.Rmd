@@ -1,0 +1,85 @@
+---
+title: "lab1"
+author: "Yovna Junglee"
+date: '2023-01-12'
+output: pdf_document
+---
+
+## Lab 1
+
+
+### 1.
+
+Plot the ratio of male to female mortality rates over time for ages 10,20,30 and 40 (different color for each age) and change the theme
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+
+library(tidyverse)
+
+# Load data set
+dm <- read_table("https://www.prdh.umontreal.ca/BDLC/data/ont/Mx_1x1.txt",
+                 skip = 2, col_types = "dfddd")
+#head(dm)
+
+ratio_fm <- dm  %>% filter(Age %in% c(10,20,30,40)) %>% mutate(ratio = Male/Female)
+
+ratio_fm %>% ggplot(aes(x = Year, y = ratio, colour = Age)) + geom_line() + theme_bw()
+```
+
+
+
+
+
+### 2.
+
+Find the age that has the highest female mortality rate each year
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+dm %>% group_by(Year) %>% filter(Female == max(Female, na.rm = T)) %>% select(Year, Age)
+```
+
+
+
+### 3.
+
+Use the `summarize(across())` syntax to calculate the standard deviation of mortality rates by age for the Male, Female and Total populations.
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+dm  %>% group_by(Age) %>% summarise(across(c(Male, Female, Total), sd, na.rm = T)) 
+
+```
+
+
+
+### 4.
+
+The Canadian HMD also provides population sizes over time (https://www.prdh.umontreal.ca/BDLC/data/ont/Population.txt). Use these to calculate the population weighted average mortality rate separately for males and females, for every year. Make a nice line plot showing the result (with meaningful labels/titles) and briefly comment on what you see (1 sentence). Hint: `left_join` will probably be useful here.
+
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+dsize <- read_table("https://www.prdh.umontreal.ca/BDLC/data/ont/Population.txt", 
+                    skip = 2, col_types = "dfddd")
+
+colnames(dsize)[3:5] <- c("PopF", "PopM", "PopTotal")
+
+
+dtot <- left_join(dm %>% select(Male, Female, Year, Age), dsize %>% filter(Year!=2020), 
+                  by = c("Year", "Age")) %>% mutate(DeathsF = (Female*PopF), DeathsM = (Male*PopM)) %>% 
+  group_by(Year) %>% 
+  summarise(across(c(DeathsF, DeathsM, PopF, PopM), sum, na.rm = T))
+
+dw <- dtot %>% mutate(Female = DeathsF/PopF, Male = DeathsM/PopM)
+
+dw %>% pivot_longer(c(Female, Male), names_to = "Sex", values_to = "Weighted")  %>% 
+  ggplot(aes(x = Year, y = Weighted, colour = Sex)) + geom_line()  +
+  labs( y = "Population weighted  \n average mortality rate")
+
+
+```
+
+We note that the population weighted average mortality rate has decreased drastically since 1921 but the mortality rates in the male population remain higher than the female population every year. 
+
