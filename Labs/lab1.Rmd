@@ -19,7 +19,7 @@ library(tidyverse)
 
 # Load data set
 dm <- read_table("https://www.prdh.umontreal.ca/BDLC/data/ont/Mx_1x1.txt",
-                 skip = 2, col_types = "dfddd")
+                 skip = 2, col_types = "dcddd")
 #head(dm)
 
 ratio_fm <- dm  %>% filter(Age %in% c(10,20,30,40)) %>% mutate(ratio = Male/Female)
@@ -62,7 +62,7 @@ The Canadian HMD also provides population sizes over time (https://www.prdh.umon
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 dsize <- read_table("https://www.prdh.umontreal.ca/BDLC/data/ont/Population.txt", 
-                    skip = 2, col_types = "dfddd")
+                    skip = 2, col_types = "dcddd")
 
 colnames(dsize)[3:5] <- c("PopF", "PopM", "PopTotal")
 
