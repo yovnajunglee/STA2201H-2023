@@ -77,7 +77,9 @@ dw <- dtot %>% mutate(Female = DeathsF/PopF, Male = DeathsM/PopM)
 
 dw %>% pivot_longer(c(Female, Male), names_to = "Sex", values_to = "Weighted")  %>% 
   ggplot(aes(x = Year, y = Weighted, colour = Sex)) + geom_line()  +
-  labs( y = "Population weighted  \n average mortality rate")
+  labs( y = "Population weighted  \n average mortality rate",
+        title = "Population weighted average mortality rates for 
+        males and females from 1921 to 2019")
 
 
 ```
