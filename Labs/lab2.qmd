@@ -19,7 +19,7 @@ library(ggrepel)
 
 ### 1. 
 
-```{r echo=TRUE, message=FALSE, warning=FALSE}
+```{r echo=TRUE, message=FALSE, warning=FALSE, fig.height=10}
 
 all_data <- list_packages(limit = 500)
 #head(all_data)
@@ -36,14 +36,13 @@ delay_2022 <- clean_names(delay_2022)
 
 delay_2022 %>% 
   filter(min_delay>0) %>% 
-  group_by(station, line) %>% 
+  group_by(line, station) %>% 
   summarise(mean_delays = mean(min_delay, na.rm =T)) %>%
-  distinct() %>% arrange(desc(mean_delays)) %>% 
-  head(5) %>% 
+  slice_max(mean_delays, n=5) %>%
   ggplot(aes(x = station, y = mean_delays)) + 
   geom_col(aes(fill = line), alpha = .5) + 
-  facet_wrap(~line, scales = "free_x") + 
-  theme(axis.text.x = element_text(angle = 90))
+  facet_wrap(~line, scales = "free_y", ncol = 1) + 
+  theme(axis.text.x = element_text(angle = 90)) + coord_flip()
   
   
 ```
@@ -84,7 +83,7 @@ campaign_2014$contribution_amount <- as.numeric(campaign_2014$contribution_amoun
 
 ### 5. 
 
-There is one notable outlier with contribution amount 508224.73. However, contributions that exceed 10000 can also be considered as potential outliers. These outliers are mostly monetary contributions from Doug and Rob Ford for their election campaigns.\
+We plot the histogram of the contribution amount on both the original and log scale. There is one notable outlier with contribution amount 508224.73. However, contributions that exceed 10000 can also be considered as potential outliers. These outliers are mostly monetary contributions from Doug and Rob Ford for their election campaigns.\
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 
@@ -116,7 +115,7 @@ df <- campaign_2014 %>% group_by(contributors_name) %>%
             n_cont  = n())
 
 df %>% slice_max(ave_cont, n = 5) %>% 
-  select(contributors_name)
+  select(contributors_name, ave_cont)
   
 ```
 
@@ -124,14 +123,14 @@ df %>% slice_max(ave_cont, n = 5) %>%
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 df %>% slice_max(total_cont, n = 5)%>% 
-  select(contributors_name)
+  select(contributors_name, total_cont)
 ```
 
 -    Highest number of contributions
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 df %>% slice_max(n_cont, n = 5)%>% 
-  select(contributors_name)
+  select(contributors_name, n_cont)
 ```
 
 ### 7. 
@@ -140,14 +139,14 @@ df %>% slice_max(n_cont, n = 5)%>%
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 
-df2 <- campaign_2014 %>% filter(relationship_to_candidate != "Candidate") %>%
+df2 <- campaign_2014 %>% filter(relationship_to_candidate %in% c("Spouse", NA)) %>%
   group_by(contributors_name) %>% 
   summarise(ave_cont  = mean(contribution_amount), 
             total_cont  = sum(contribution_amount), 
             n_cont  = n())
 
 df2 %>% slice_max(ave_cont, n = 5) %>% 
-  select(contributors_name)
+  select(contributors_name, ave_cont)
   
 ```
 
@@ -155,14 +154,14 @@ df2 %>% slice_max(ave_cont, n = 5) %>%
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 df2 %>% slice_max(total_cont, n = 5)%>% 
-  select(contributors_name)
+  select(contributors_name, total_cont)
 ```
 
 -    Highest number of contributions
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 df2 %>% slice_max(n_cont, n = 5)%>% 
-  select(contributors_name)
+  select(contributors_name, n_cont)
 ```
 
 ### 8. 
