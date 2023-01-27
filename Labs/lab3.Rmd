@@ -7,37 +7,39 @@ format: pdf
 
 ## Question 1
 
-Consider the happiness example from the lecture, with 118 out of 129 women indicating they are happy. We are interested in estimating $\theta$, which is the (true) proportion of women who are happy. Calculate the MLE estimate $\hat{\theta}$ and 95% confidence interval. 
 
 ```{r}
+library(ggplot2)
+
 thetahat <- 118/129
 se.thet <- sqrt(thetahat*(1-thetahat)/129)
 ci.thet <- c(thetahat - 1.96*se.thet,thetahat +1.96*se.thet)
 ```
 
 
-$\hat \theta = 118/129 =$ `r round(118/129,3)` with 95% confidence interval (`round(ci.thet, 3)``)
+$\hat \theta = 118/129 =$ `r round(118/129,3)` with 95% confidence interval (`r round(ci.thet, 3)`)
 
 
 ## Question 2
 
-Assume a Beta(1,1) prior on $\theta$. Calculate the posterior mean for $\hat{\theta}$ and 95% credible interval. 
 
+Since the posterior distribution of  $\theta|y \sim Beta(y+1, n-y+1)$, the posterior mean is given by $\frac{y+1}{y+1+n-y+1} = \frac{118+1}{129+2}=$ `r round(119/131, 3)`. 
 
-Since the posterior distribution of  $\theta|y \sim Beta(y+1, n-y+1)$, the posterior mean is given by $\frac{y+1}{y+1+n-y+1} = \frac{118+1}{129+2}=$ `r round(119/131, 3)`.
+```{r}
+cred.int <- c(qbeta(0.025, 119, 129-118+1), qbeta(0.975, 119, 129-118+1))
+
+```
+
+ The 95% credible interval is given by `r round(cred.int,3)`
+ 
+ 
 ## Question 3
 
 Now assume a Beta(10,10) prior on $\theta$. What is the interpretation of this prior? Are we assuming we know more, less or the same amount of information as the prior used in Question 2?
 
+The prior assumes that the expected proportion of women aged 65+ who are happy is $(10)/(10+10) = 0.5$. We assume we know more information since the prior places more weight on certain values of $\theta$ (symmetric around 0.5) than others unlike Beta(1,1) which places equal amount of information over all possible values of $\theta$.
 
 ## Question 4
-
-Create a graph in ggplot which illustrates
-
-- The likelihood (easiest option is probably to use `geom_histogram` to plot the histogram of appropriate random variables)
-- The priors and posteriors in question 2 and 3 (use `stat_function` to plot these distributions)
-
-Comment on what you observe. 
 
 
 ```{r}
@@ -46,20 +48,50 @@ bin.ll <- function(theta){
   dbinom(118, size = 129, prob = theta)
 }
 
+
+colors <- c("Likelihood function" = "blue", 
+            "Beta(1,1) prior" = "red", 
+            "Beta(119, 12) posterior" = "orange")
+
  
-ggplot() + xlim(0, 1) + geom_function(fun = dbeta, args = list(1,1), col = 1, lty =2) +
-  geom_function(fun = dbeta, args = list(119,129-118+1), col = 4) + 
-  geom_function(fun = bin.ll, col = 2)
+ggplot() + xlim(0, 1) +
+  geom_function(fun = dbeta, args = list(1,1), 
+                aes(col = "Beta(1,1) prior")) +
+  geom_function(fun = dbeta, args = list(119,129-118+1),
+                aes(col = "Beta(119, 12) posterior")) + 
+  geom_function(fun = bin.ll,  
+                aes(col = "Likelihood function")) +
+  labs(x = bquote(theta), y = "Density", color = "Function" )
+
+
+colors <- c("Likelihood function" = "blue", 
+            "Beta(10,10) prior" = "red", 
+            "Beta(119, 12) posterior" = "orange")
+
+ 
+ggplot() + xlim(0, 1) + 
+  geom_function(fun = dbeta, args = list(10,10), 
+                                      aes(col = "Beta(1,1) prior")) +
+  geom_function(fun = dbeta, args = list(118 + 10 ,129-118+10), 
+                aes(col = "Beta(128, 21) posterior")) + 
+  geom_function(fun = bin.ll,  
+                aes(col = "Likelihood function")) +
+  labs(x = bquote(theta), y = "Density", color = "Function" )
 
 
 ```
+The posterior distribution shifts slightly to the left. 
 
 ## Question 5
 
-(No R code required) A study is performed to estimate the effect of a simple training program on basketball free-throw shooting. A random sample of 100 college students is recruited into the study. Each student first shoots 100 free-throws to establish a baseline success probability. Each student then takes 50 practice shots each day for a month. At the end of that time, each student takes 100 shots for a final measurement. Let $\theta$ be the average improvement in success probability. $\theta$ is measured as the final proportion of shots made minus the initial proportion of shots made. 
 
-Given two prior distributions for $\theta$ (explaining each in a sentence):
+Denote $\theta = p_2 - p_1$ to be the change in proportions where $p_2$ is the proportion after the training program, and $p_1$, before the training program.
 
-- A noninformative prior, and
+- A noninformative prior could be a uniform prior on $\mathbb R$, $\theta \sim U(-\infty, \infty)$  which assigns equal probability to every possible value of $\theta$. 
 
-- A subjective/informative prior based on your best knowledge
+
+- It can be expected that the performance of the students would improve (i.e $\theta > 0$) but that the change in improvement is less than 1 ($\theta < 1$). Further, we assume that the performance of most students will not drastically improve. Hence, we choose a Beta(1.5, 3) prior (density shown below).
+
+```{r}
+ggplot() + xlim(0, 1) + geom_function(fun = dbeta, args = list(1.5,3))
+```
