@@ -8,28 +8,21 @@ execute:
   message: false
 ---
 
-# Introduction
-
-Today we will be starting off using Stan, looking at the kid's test score data set (available in resources for the [Gelman Hill textbook](https://mc-stan.org/rstanarm/reference/rstanarm-datasets.html)). 
-
 ```{r}
 library(tidyverse)
 library(rstan)
 library(tidybayes)
 library(here)
+library(broom)
+theme_set(theme_bw())
 ```
 
-
-The data look like this:
 
 ```{r}
-kidiq <- read_rds(here("kidiq.RDS"))
+kidiq <- read_rds(("kidiq.RDS"))
 kidiq
 ```
-As well as the kid's test scores, we have a binary variable indicating whether or not the mother completed high school, the mother's IQ and age. 
 
-
-# Descriptives
 
 ## Question 1
 
@@ -40,21 +33,24 @@ Use plots or tables to show three interesting observations about the data. Remem
 
 
 ```{r}
-colnames(kidiq)
-kidiq |> ggplot(aes(x = factor(mom_hs), y = kid_score)) + geom_boxplot()
-kidiq |> ggplot(aes(x = mom_iq, y = kid_score)) + geom_point()
-kidiq |> ggplot(aes(x = mom_age, y = kid_score)) + geom_point()
+#colnames(kidiq)
+kidiq |> ggplot(aes(x = factor(mom_hs), y = kid_score)) +
+  geom_boxplot() + labs(x = "Mom education")
+kidiq |> ggplot(aes(x = mom_iq, y = kid_score)) + 
+  geom_point()
+kidiq |> ggplot(aes(x = mom_age, y = kid_score)) +
+  geom_point() + geom_smooth()
 
 ```
+1. From the box plot, we note that the median IQ score is higher when mom possesses high-school education level. However the distributions overlap. 
+2. From the first scatter plot, we note that as the mom's IQ score increases, the child's score also increases i.e. there is a positive relationship between those variables.
+3. The second scatter plot does not show any relationship between the mom's age and the child's IQ score.
 
 
+```{r, results='hide'}
 
-# Estimating mean, no covariates
+# Fit first model with uninformative prior
 
-In class we were trying to estimate the mean and standard deviation of the kid's test scores. The `kids2.stan` file contains a Stan model to do this. If you look at it, you will notice the first `data` chunk lists some inputs that we have to define: the outcome variable `y`, number of observations `N`, and the mean and standard deviation of the prior on `mu`. Let's define all these values in a `data` list.
-
-
-```{r}
 y <- kidiq$kid_score
 mu0 <- 80
 sigma0 <- 10
@@ -64,143 +60,85 @@ data <- list(y = y,
              N = length(y), 
              mu0 = mu0,
              sigma0 = sigma0)
-```
-
-
-
-Now we can run the model:
-
-```{r}
-fit <- stan(file = here("kids2.stan"),
+fit <- stan(file = ("kids2.stan"),
             data = data,
             chains = 3,
             iter = 500)
 ```
-
-Look at the summary
-
 ```{r}
 fit
-```
-
-Traceplot
-
-```{r}
-traceplot(fit)
-```
-
-All looks fine. 
-
-```{r}
-pairs(fit, pars = c("mu", "sigma"))
-```
-
-```{r}
-stan_dens(fit, separate_chains = TRUE)
-```
-
-
-## Understanding output
-
-What does the model actually give us? A number of samples from the posteriors. To see this, we can use `extract` to get the samples. 
-
-```{r}
-post_samples <- extract(fit)
-head(post_samples[["mu"]])
-```
-
-
-This is a list, and in this case, each element of the list has 4000 samples. E.g. quickly plot a histogram of mu
-
-```{r}
-hist(post_samples[["mu"]])
-median(post_samples[["mu"]])
-# 95% bayesian credible interval
-quantile(post_samples[["mu"]], 0.025)
-quantile(post_samples[["mu"]], 0.975)
-```
-
-
-
-## Plot estimates
-
-There are a bunch of packages, built-in functions that let you plot the estimates from the model, and I encourage you to explore these options (particularly in `bayesplot`, which we will most likely be using later on). I like using the `tidybayes` package, which allows us to easily get the posterior samples in a tidy format (e.g. using gather draws to get in long format). Once we have that, it's easy to just pipe and do ggplots as usual. 
-
-
-Get the posterior samples for mu and sigma in long format:
-
-```{r}
-dsamples <- fit  |> 
-  gather_draws(mu, sigma) # gather = long format
-dsamples
-
-# wide format
-fit  |>  spread_draws(mu, sigma)
-
-# quickly calculate the quantiles using 
-
-dsamples |> 
-  median_qi(.width = 0.8)
-```
-
-Let's plot the density of the posterior samples for mu and add in the prior distribution
-
-```{r}
-dsamples |> 
-  filter(.variable == "mu") |> 
-  ggplot(aes(.value, color = "posterior")) + geom_density(size = 1) + 
-  xlim(c(70, 100)) + 
-  stat_function(fun = dnorm, 
-        args = list(mean = mu0, 
-                    sd = sigma0), 
-        aes(colour = 'prior'), size = 1) +
-  scale_color_manual(name = "", values = c("prior" = "red", "posterior" = "black")) + 
-  ggtitle("Prior and posterior for mean test scores") + 
-  xlab("score")
-  
 ```
 
 ## Question 2
 
 Change the prior to be much more informative (by changing the standard deviation to be 0.1). Rerun the model. Do the estimates change? Plot the prior and posterior densities. 
 
-```{r}
+
+
+```{r, results='hide'}
 # named list to input for stan function
 data <- list(y = y, 
              N = length(y), 
              mu0 = mu0,
              sigma0 = 0.1)
 
-fit.informative <- stan(file = here("kids2.stan"),
+fit.informative <- stan(file = ("kids2.stan"),
             data = data,
             chains = 3,
             iter = 500)
-fit.informative
+
 ```
-
-# Adding covariates
-
-Now let's see how kid's test scores are related to mother's education. We want to run the simple linear regression
-
-$$
-Score = \alpha + \beta X
-$$
-
-where $X = 1$ if the mother finished high school and zero otherwise. 
-
-`kid3.stan` has the stan model to do this. Notice now we have some inputs related to the design matrix $X$ and the number of covariates (in this case, it's just 1).
-
-Let's get the data we need and run the model. 
-
 
 
 ```{r}
+fit.informative
+
+post = extract(fit.informative)
+post_samples_fit = extract(fit)
+```
+
+The estimate for the mean parameter decreases with the informative prior and the variance increases slightly. The standard deviation with the informative prior is much lower. This can be shown in the plots below where the densities of the posterior samples are flatter with the uninformative prior. 
+
+
+```{r}
+
+# Posterior densities
+
+plot(density(post[["mu"]]), xlim = c(79,91), 
+     main = "", col = 'red')
+lines(density(post_samples_fit[["mu"]]))
+legend("topright", bty = 'n', col = c('red', 1), 
+       legend = c("Informative prior", "Uninformative prior"), 
+       lty =1)
+
+
+plot(density(post[["sigma"]]), xlim = c(18,25), 
+     main ="", ylim = c(0, .7), col = 'red')
+lines(density(post_samples_fit[["sigma"]]))
+legend("topright", bty = 'n', col = c('red', 1), 
+       legend = c("Informative prior", "Uninformative prior"), 
+       lty =1)
+
+
+# Prior densities
+
+plot(dnorm(seq(mu0-10,mu0 + 10, by =.1), 
+           mean = mu0, sd = 10), type ='l',
+     ylab = "Density of uninformative prior", xlab = "x")
+plot(dnorm(seq(mu0-10,mu0 + 10, by =.1),
+            mean = mu0, sd = 0.1), type ='l',
+     ylab = "Density of informative prior", xlab = "x")
+
+```
+
+
+```{r, results='hide'}
 X <- as.matrix(kidiq$mom_hs, ncol = 1) # force this to be a matrix
 K <- 1
 
 data <- list(y = y, N = length(y), 
              X =X, K = K)
-fit2 <- stan(file = here("kids3.stan"),
+fit2 <- stan(file = ("kids3.stan"),
             data = data, 
             iter = 1000)
 ```
@@ -209,11 +147,14 @@ fit2 <- stan(file = here("kids3.stan"),
 
 a) Confirm that the estimates of the intercept and slope are comparable to results from `lm()` 
 
+
 ```{r}
 m1 <- lm(kid_score ~ factor(mom_hs), kidiq)
 summary(m1)
 fit2
 ```
+
+The estimates of the Bayesian model are very similar to the MLE model.
 
 b) Do a `pairs` plot to investigate the joint sample distributions of the slope and intercept. Comment briefly on what you see. Is this potentially a problem?
 
@@ -221,41 +162,30 @@ b) Do a `pairs` plot to investigate the joint sample distributions of the slope 
 pairs(fit2, pars = c("alpha", "beta[1]"))
 ```
 
-## Plotting results
-
-It might be nice to plot the posterior samples of the estimates for the non-high-school and high-school mothered kids. Here's some code that does this: notice the `beta[condition]` syntax. Also notice I'm using `spread_draws`, because it's easier to calculate the estimated effects in wide format
-
-```{r}
-fit2 |>
-  spread_draws(alpha, beta[k], sigma) |> 
-     mutate(nhs = alpha, # no high school is just the intercept
-          hs = alpha + beta) |> 
-  select(nhs, hs) |> 
-  pivot_longer(nhs:hs, names_to = "education", values_to = "estimated_score") |> 
-  ggplot(aes(y = education, x = estimated_score)) +
-  stat_halfeye() + 
-  theme_bw() + 
-  ggtitle("Posterior estimates of scores by education level of mother")
-  
-```
+We note that the posterior samples between the parameters are highly correlated which indicates that the sampler is inefficient since we note that high slope values lead to low intercept values.
 
 
 ## Question 4
 
 Add in mother's IQ as a covariate and rerun the model. Please  mean center the covariate before putting it into the model. Interpret the coefficient on the (centered) mum's IQ. 
 
-```{r}
-X <- as.matrix(cbind(kidiq$mom_hs, kidiq$mom_iq-mean(kidiq$mom_iq)), ncol = 1) # force this to be a matrix
+```{r, results='hide'}
+X <- as.matrix(cbind(kidiq$mom_hs, 
+                     kidiq$mom_iq-mean(kidiq$mom_iq)),
+               ncol = 1) # force this to be a matrix
 K <- 2
 
 data <- list(y = y, N = length(y), 
              X =X, K = K)
-fit3 <- stan(file = here("kids3.stan"),
+fit3 <- stan(file = ("kids3.stan"),
             data = data, 
             iter = 1000)
+```
 
+```{r}
 fit3
 ```
+It is expected that as the centered mom's IQ score increases by 1 unit, the child's IQ score increases by 0.56 units.
 
 ## Question 5 
 
@@ -265,18 +195,31 @@ Confirm the results from Stan agree with `lm()`
 m2 <- lm(kid_score ~ factor(mom_hs) + I(mom_iq-mean(mom_iq)), kidiq)
 summary(m2)
 ```
+
+The results are similar. 
+
 ## Question 6
 
 Plot the posterior estimates of scores by education of mother for mothers who have an IQ of 110. 
 
-```{r}
+```{r, fig.height=10}
 m <- mean(kidiq$mom_iq)
 post_samples = extract(fit3)
-post_y1 <- (post_samples[["alpha"]] + post_samples[["beta"]][,1] + (110 - m)*post_samples[["beta"]][,2])
-hist(post_y1,  freq = F)
 
-post_y0 <- (post_samples[["alpha"]] + 0*post_samples[["beta"]][,1] + (110 - m)*post_samples[["beta"]][,2])
-hist(post_y0)
+par(mfrow = c(2,1))
+post_y1 <- (post_samples[["alpha"]] +
+              post_samples[["beta"]][,1] + (110 - m)*post_samples[["beta"]][,2])
+hist(post_y1,  freq = F, xlim = 
+       c(80, 100), 
+     main = "With high school education", 
+     xlab  = "score")
+
+post_y0 <- (post_samples[["alpha"]] +
+              0*post_samples[["beta"]][,1] + (110 - m)*post_samples[["beta"]][,2])
+hist(post_y0 , freq = F,  
+     xlim = c(80, 100), 
+     main = "Without high school education", 
+     xlab  = "score")
 ```
 
 ## Question 7
@@ -285,5 +228,13 @@ Generate and plot (as a histogram) samples from the posterior predictive distrib
 
 
 ```{r}
+# Sample from posterior predictive distribution
+
+ynew <- rnorm(n = 1000)*(post_samples[["sigma"]]) + 
+  post_samples[["alpha"]] + 
+  1*post_samples[["beta"]][,1] + 
+  (95 - m)*post_samples[["beta"]][,2]
+hist(ynew, freq = F)
+
 ```
 
