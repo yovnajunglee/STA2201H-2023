@@ -17,7 +17,7 @@ library(lubridate)
 library(ggrepel)
 ```
 
-### 1. 
+### 1.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE, fig.height=10}
 
@@ -47,7 +47,7 @@ delay_2022 %>%
   
 ```
 
-### 2. 
+### 2.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 
@@ -60,7 +60,7 @@ campaign_2014 <- get_resource("5b230e92-0a22-4a15-9572-0b19cc222985")[[2]]
 
 ```
 
-### 3. 
+### 3.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 
@@ -81,7 +81,7 @@ skim(campaign_2014)
 campaign_2014$contribution_amount <- as.numeric(campaign_2014$contribution_amount)
 ```
 
-### 5. 
+### 5.
 
 We plot the histogram of the contribution amount on both the original and log scale. There is one notable outlier with contribution amount 508224.73. However, contributions that exceed 10000 can also be considered as potential outliers. These outliers are mostly monetary contributions from Doug and Rob Ford for their election campaigns.\
 
@@ -105,7 +105,7 @@ campaign_2014 %>% filter(contribution_amount <= 10000) %>%
 
 ### 6.
 
--    Highest mean contributions
+-   Highest mean contributions
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 
@@ -119,23 +119,23 @@ df %>% slice_max(ave_cont, n = 5) %>%
   
 ```
 
--    Highest total contributions
+-   Highest total contributions
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 df %>% slice_max(total_cont, n = 5)%>% 
   select(contributors_name, total_cont)
 ```
 
--    Highest number of contributions
+-   Highest number of contributions
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 df %>% slice_max(n_cont, n = 5)%>% 
   select(contributors_name, n_cont)
 ```
 
-### 7. 
+### 7.
 
--    Highest mean contributions
+-   Highest mean contributions
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 
@@ -150,21 +150,21 @@ df2 %>% slice_max(ave_cont, n = 5) %>%
   
 ```
 
--    Highest total contributions
+-   Highest total contributions
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 df2 %>% slice_max(total_cont, n = 5)%>% 
   select(contributors_name, total_cont)
 ```
 
--    Highest number of contributions
+-   Highest number of contributions
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 df2 %>% slice_max(n_cont, n = 5)%>% 
   select(contributors_name, n_cont)
 ```
 
-### 8. 
+### 8.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 
