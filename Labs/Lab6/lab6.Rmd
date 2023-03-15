@@ -64,6 +64,10 @@ aff.i <- c(0.2415,0.2309,0.3999,0.2977,0.3264,0.3346,0.4150,0.4202,0.1023,0.1752
 
 Explain a bit more what the `expect.i` variable is. For example, if a particular area has an expected deaths of 6, what does this mean?
 
+## Answer 
+
+Expected deaths is the implied number of lip cancer deaths for a particular region given that region's age structure and the national level age-specific mortality rates for lip cancer. For example, an expected number of deaths of 6 would mean that for that particular region we would expect 6 lip cancer deaths if this region were to experience the same age-specific mortality rates as at the national level. 
+
 ## Question 2
 
 Run three different models in Stan with three different set-up's for estimating $\theta_i$, that is the relative risk of lip cancer in each region:
@@ -72,6 +76,105 @@ Run three different models in Stan with three different set-up's for estimating 
 2. $\alpha_i$ is different in each region and modeled separately (with covariate)
 3. $\alpha_i$ is different in each region and the intercept is modeled hierarchically (with covariate)
 
+
+## Answer
+
+$$
+y_i|\theta \sim \text{Poisson}(\theta_i \cdot e_i)
+$$
+
+Look at three models for $\log \theta_i$:
+
+1.
+
+$$
+\log \theta_i = \alpha + \beta x_i
+$$
+
+2.
+
+$$
+\log \theta_i = \alpha_i + \beta x_i
+$$
+
+3.
+$$
+\log \theta_i = \alpha_i + \beta x_i \\
+\alpha_i \sim N(\mu, \sigma^2)
+$$
+
+```{r, }
+library(tidyverse)
+library(rstan)
+library(tidybayes)
+
+# Run model 1
+
+stan_data = list(y = observe.i,
+                 log_e = log(expect.i),
+                 N = length(observe.i),
+                 x = aff.i - mean(aff.i))
+
+mod1 <- stan(data = stan_data, file = "lab9_1.stan")
+
+# Run model 2
+
+mod2 <- stan(data = stan_data, file = "lab9_2.stan")
+
+# Run model 3
+
+mod3 <- stan(data = stan_data, file = "lab9_3.stan")
+
+```
 ## Question 3
 
 Make two plots (appropriately labeled and described) that illustrate the differences in estimated $\theta_i$'s across regions and the differences in $\theta$s across models. 
+
+
+uncertainty around model 2 bigger - expected since we are adding more parameters (each alpha different )
+
+```{r}
+res_mod1 <- mod1 |>
+  gather_draws(log_theta[i]) |>
+  median_qi() |>
+  rename(median_mod1 = .value,
+         lower_mod1 = .lower,
+         upper_mod1=.upper) |>
+  select(i, median_mod1:upper_mod1)
+
+res_mod2 <-mod2 |>
+  gather_draws(log_theta[i]) |>
+  median_qi() |>
+  rename(median_mod2 = .value,
+         lower_mod2 = .lower,
+         upper_mod2=.upper) |>
+  select(i, median_mod2:upper_mod2)
+
+res_mod3 <- mod3 |>
+  gather_draws(log_theta[i]) |>
+  median_qi() |>
+  rename(median_mod3 = .value,
+         lower_mod3 = .lower,
+         upper_mod3=.upper) |>
+  select(i, median_mod3:upper_mod3)
+  
+
+res <- res_mod1 |> left_join(res_mod2) |> left_join(res_mod3)
+
+
+res |> select(median_mod1, median_mod2, median_mod3) |>
+  pivot_longer(median_mod1:median_mod3, names_to  = "model", values_to = "log_theta") |> mutate(model = str_remove(model, "median_")) |>
+  ggplot(aes(log_theta, fill = model)) + geom_histogram(position = "dodge")
+```
+
+
+```{r}
+res |> mutate(deaths = observe.i, log_smr = log(observe.i/expect.i)) |>
+   ggplot(aes(log_smr, median_mod1, color = "Model 1")) + geom_point(
+     aes(size = deaths)) +
+  geom_errorbar(aes(ymin = lower_mod1, ymax = upper_mod1))+ geom_abline(slope =1, intercept = 0) +
+   geom_point(aes(log_smr, median_mod2, color = "Model 2"))+
+    geom_errorbar(aes(ymin = lower_mod2, ymax = upper_mod2, color = "Model 2")) +
+   geom_point(aes(log_smr, median_mod3, color = "Model 3"))+
+    geom_errorbar(aes(ymin = lower_mod3, ymax = upper_mod3, color = "Model 3"))
+```
