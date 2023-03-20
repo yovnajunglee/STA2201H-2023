@@ -8,10 +8,10 @@ execute:
   message: false
 ---
 
-
 ```{r}
 knitr::opts_chunk$set(results = 'hide')
 ```
+
 # Lip cancer
 
 Here is the lip cancer data given to you in terribly unreproducible and error-prone format. 
@@ -19,6 +19,7 @@ Here is the lip cancer data given to you in terribly unreproducible and error-pr
 - `aff.i` is proportion of male population working outside in each region
 - `observe.i` is observed deaths in each region
 - `expect.i` is expected deaths, based on region-specific age distribution and national-level age-specific mortality rates. 
+
 
 ```{r}
 observe.i <- c(
@@ -64,6 +65,7 @@ aff.i <- c(0.2415,0.2309,0.3999,0.2977,0.3264,0.3346,0.4150,0.4202,0.1023,0.1752
 ```
 
 
+
 ## Question 1
 
 Explain a bit more what the `expect.i` variable is. For example, if a particular area has an expected deaths of 6, what does this mean?
@@ -83,25 +85,32 @@ Run three different models in Stan with three different set-up's for estimating 
 
 ## Answer
 
+
 $$
 y_i|\theta \sim \text{Poisson}(\theta_i \cdot e_i)
 $$
+
 
 Look at three models for $\log \theta_i$:
 
 1.
 
+
 $$
 \log \theta_i = \alpha + \beta x_i
 $$
 
+
 2.
+
 
 $$
 \log \theta_i = \alpha_i + \beta x_i
 $$
 
+
 3.
+
 $$
 \log \theta_i = \alpha_i + \beta x_i \; \;\;\;
 \alpha_i \sim N(\mu, \sigma^2)
@@ -130,12 +139,14 @@ mod2 <- stan(data = stan_data, file = "lab9_2.stan")
 mod3 <- stan(data = stan_data, file = "lab9_3.stan")
 
 ```
+
 ## Question 3
 
 Make two plots (appropriately labeled and described) that illustrate the differences in estimated $\theta_i$'s across regions and the differences in $\theta$s across models. 
 
 
 Uncertainty around model 2 is bigger since we are adding more parameters (each alpha is different).
+
 
 ```{r}
 res_mod1 <- mod1 |>
@@ -170,7 +181,6 @@ res |> select(median_mod1, median_mod2, median_mod3) |>
   pivot_longer(median_mod1:median_mod3, names_to  = "model", values_to = "log_theta") |> mutate(model = str_remove(model, "median_")) |>
   ggplot(aes(log_theta, fill = model)) + geom_histogram(position = "dodge")
 ```
-
 
 ```{r}
 res |> mutate(deaths = observe.i, log_smr = log(observe.i/expect.i)) |>
