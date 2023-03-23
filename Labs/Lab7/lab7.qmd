@@ -13,12 +13,14 @@ execute:
 In this lab you will be fitting a couple of different models to the data about child mortality in Sri Lanka, which was used in the lecture. Here's the data and the plot from the lecture:
 
 ```{r}
+knitr::opts_chunk$set(results = 'hide')
+
 library(tidyverse)
 library(here)
 library(rstan)
 library(tidybayes)
 
-lka <- read_csv(here("lka.csv"))
+lka <- read_csv(here("Labs/Lab7/lka.csv"))
 ggplot(lka, aes(year, logit_ratio)) +
   geom_point(aes( color = source)) + 
   geom_line(aes( color = source), lty = 2) + 
@@ -43,7 +45,7 @@ stan_data <- list(y = lka$logit_ratio, year_i = observed_years - years[1]+1,
                   mid_year = mean(years), se = lka$se)
 
 mod <- stan(data = stan_data,
-             file = here("lka_linear_me.stan"))
+             file = here("Labs/Lab7/lka_linear_me.stan"))
 
 ```
 
@@ -84,7 +86,7 @@ stan_data <- list(y = lka$logit_ratio, year_i = observed_years - years[1]+1,
                   mid_year = mean(years), se = lka$se,P=9)
 
 mod2 <- stan(data = stan_data,
-             file = here("lka2.stan"))
+             file = here("Labs/Lab7/lka2.stan"))
 mod2
 ```
 
@@ -130,7 +132,7 @@ Code up and estimate a first order random walk model to fit to the Sri Lankan da
 ```{r}
 
 mod3 <- stan(data = stan_data,
-             file = here("lka3.stan"))
+             file = here("Labs/Lab7/lka3.stan"))
 mod3
 ```
 
@@ -177,7 +179,7 @@ Run the first order and second order random walk models, including projections o
 ```{r}
 
 mod4 <- stan(data = stan_data,
-             file = here("lka4.stan"))
+             file = here("Labs/Lab7/lka4.stan"))
 mod4
 
 # Plot projections
@@ -197,9 +199,9 @@ ggplot(lka, aes(year, logit_ratio)) +
   #geom_ribbon(aes(ymin = logit_ratio - se, 
   #                ymax = logit_ratio + se, 
   #                fill =  source), alpha = 0.1) + 
-  geom_line(data = res, aes(year, .value, col = "RW1"), linewidth =.2) + 
+  geom_line(data = res, aes(year, .value, col = "RW1")) + 
   geom_ribbon(data = res, aes(y = .value, ymin = .lower, ymax = .upper, fill = "RW1"), alpha = 0.2)+
-  geom_line(data = res_p, aes(year, .value,col="RW1 projections"), linewidth =.2) + 
+  geom_line(data = res_p, aes(year, .value,col="RW1 projections")) + 
   geom_ribbon(data = res_p, aes(y = .value, ymin = .lower, ymax = .upper,fill="RW1 projections"), alpha = 0.2) +
   
    geom_line(data = res2, aes(year, .value, col = "RW2")) + 
@@ -230,7 +232,7 @@ stan_data <- list(y = lka_no_VR$logit_ratio, year_i = observed_years - years[1]+
                   T = nyears, years = years, N = length(observed_years), 
                   mid_year = mean(years), se = lka_no_VR$se, P = 18)
 mod5 <- stan(data = stan_data,
-             file = here("lka4.stan"))
+             file = here("Labs/Lab7/lka4.stan"))
 mod5
 
 # Plot projections
