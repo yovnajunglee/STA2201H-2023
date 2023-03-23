@@ -212,7 +212,7 @@ ggplot(lka, aes(year, logit_ratio)) +
   
   theme_bw()+
   labs(title = "Ratio of neonatal to other child mortality (logged), Sri Lanka",
-       y = "log ratio", subtitle = "RW fit shown in black, projections in red")
+       y = "log ratio")
 
 ```
 
@@ -267,7 +267,7 @@ ggplot(lka, aes(year, logit_ratio)) +
   
   theme_bw()+
   labs(title = "Ratio of neonatal to other child mortality (logged), Sri Lanka",
-       y = "log ratio", subtitle = "RW fit shown in black, projections in red")
+       y = "log ratio")
 
 ```
 
