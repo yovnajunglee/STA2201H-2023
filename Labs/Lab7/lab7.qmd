@@ -194,11 +194,10 @@ res2_p=mod4 %>%
   mutate(year=years[nyears]+p)
 
 ggplot(lka, aes(year, logit_ratio)) +
-  geom_point(aes( color = source)) + 
-  geom_line(aes( color = source), lty = 2) + 
+  geom_point() + 
+  geom_line(lty = 2) + 
   geom_ribbon(aes(ymin = logit_ratio - se, 
-                  ymax = logit_ratio + se, 
-                  fill =  source), alpha = 0.1) + 
+                  ymax = logit_ratio + se), alpha = 0.1) + 
    geom_line(data = res_linear, aes(year, .value, col = "Linear fit")) + 
   geom_ribbon(data = res_linear, aes(y = .value, ymin = .lower, ymax = .upper, fill = "Linear fit"), alpha = 0.2)+
   geom_line(data = res_linear_p, aes(year, .value,col="Linear fit projections")) + 
@@ -214,9 +213,9 @@ ggplot(lka, aes(year, logit_ratio)) +
   geom_line(data = res2_p, aes(year, .value,col="RW2 projections")) + 
   geom_ribbon(data = res2_p, aes(y = .value, ymin = .lower, ymax = .upper,fill="RW2 projections"), alpha = 0.2)+
   
-  theme_bw()+
+  theme_bw() +
   labs(title = "Ratio of neonatal to other child mortality (logged), Sri Lanka",
-       y = "log ratio") 
+       y = "log ratio", subtitle = "RW2 fits with and without VR data", col = "Model",  fill = "Model")
 
 ```
 
@@ -252,12 +251,12 @@ res3_p=mod5 %>%
 
 
 
-ggplot(lka, aes(year, logit_ratio)) +
-  geom_point(aes( color = source)) + 
-  geom_line(aes( color = source), lty = 2) + 
+
+ggplot(lka, aes(year, logit_ratio))  +
+  geom_point() + 
+  geom_line(lty = 2) + 
   geom_ribbon(aes(ymin = logit_ratio - se, 
-                  ymax = logit_ratio + se, 
-                  fill =  source), alpha = 0.1) + 
+                  ymax = logit_ratio + se), alpha = 0.1) + 
   geom_line(data = res2, aes(year, .value, col = "VR")) +
   geom_ribbon(data = res2, aes(y = .value, ymin = .lower, ymax = .upper, fill = "VR"), alpha = 0.2)+
   geom_line(data = res2_p, aes(year, .value,col="VR projections")) +
@@ -268,18 +267,17 @@ ggplot(lka, aes(year, logit_ratio)) +
   
  geom_line(data = res3_p, aes(year, .value,col="No VR projections")) + 
  geom_ribbon(data = res3_p, aes(y = .value, ymin = .lower, ymax = .upper,fill="No VR projections"), alpha = 0.2)+
-  
   theme_bw()+
   labs(title = "Ratio of neonatal to other child mortality (logged), Sri Lanka",
-       y = "log ratio", subtitle = "RW2 fits with and without VR data")
+       y = "log ratio", subtitle = "RW2 fits with and without VR data", col = "Source and Model Fits",  fill = "Source and Model Fits")
 
 ```
 
-We note that by removing the VR data, the 95% credible intervals around the fitted values is smaller. The model fitted without the VR data also produces a smaller credible interval for long-term projections. 
+We note that by removing the VR data, the 95% credible intervals around the fitted values is smaller while still covering the true observed values. However, now the latest data point is from 2005 which means that we have to generate  predictions for the years 2006 to 2014. Nevertheless, the model fitted without the VR data also produces a smaller credible interval for the latest years (2020 onwards). 
 
 ## Question 6
 
 Briefly comment on which model you think is most appropriate, or an alternative model that would be more appropriate in this context. 
 
-From the results in Question 4, RW1 appears to be a better fit since the projections are close to that of the RW2 while also having smaller credible intervals.
+From the results in Question 4, RW1 appears to be a better fit since the projections and fitted values are close to that of the RW2 while also having smaller credible intervals.
 
