@@ -13,7 +13,7 @@ execute:
 In this lab you will be fitting a couple of different models to the data about child mortality in Sri Lanka, which was used in the lecture. Here's the data and the plot from the lecture:
 
 ```{r}
-knitr::opts_chunk$set(results = 'hide')
+knitr::opts_chunk$set(results = 'hide', message = F, warning = F)
 
 library(tidyverse)
 library(here)
@@ -87,16 +87,16 @@ stan_data <- list(y = lka$logit_ratio, year_i = observed_years - years[1]+1,
 
 mod2 <- stan(data = stan_data,
              file = here("Labs/Lab7/lka2.stan"))
-mod2
+#mod2
 ```
 
 ```{r}
-res=mod2 %>% 
+res_linear=mod2 %>% 
   gather_draws(mu[t]) %>% 
   median_qi() %>% 
   mutate(year=years[t])
 
-res_p=mod2 %>% 
+res_linear_p=mod2 %>% 
   gather_draws(mu_p[p]) %>% 
   median_qi() %>% 
   mutate(year=years[nyears]+p)
@@ -112,10 +112,10 @@ ggplot(lka, aes(year, logit_ratio)) +
                   ymax = logit_ratio + se, 
                   fill =  source), alpha = 0.1) + 
   theme_bw()+
-  geom_line(data = res, aes(year, .value)) + 
-  geom_ribbon(data = res, aes(y = .value, ymin = .lower, ymax = .upper), alpha = 0.2)+
-  geom_line(data = res_p, aes(year, .value),col="red") + 
-  geom_ribbon(data = res_p, aes(y = .value, ymin = .lower, ymax = .upper),fill="red", alpha = 0.2)+
+  geom_line(data = res_linear, aes(year, .value)) + 
+  geom_ribbon(data = res_linear, aes(y = .value, ymin = .lower, ymax = .upper), alpha = 0.2)+
+  geom_line(data = res_linear_p, aes(year, .value),col="red") + 
+  geom_ribbon(data = res_linear_p, aes(y = .value, ymin = .lower, ymax = .upper),fill="red", alpha = 0.2)+
   
   theme_bw()+
   labs(title = "Ratio of neonatal to other child mortality (logged), Sri Lanka",
@@ -133,7 +133,7 @@ Code up and estimate a first order random walk model to fit to the Sri Lankan da
 
 mod3 <- stan(data = stan_data,
              file = here("Labs/Lab7/lka3.stan"))
-mod3
+#mod3
 ```
 
 ```{r}
@@ -180,7 +180,7 @@ Run the first order and second order random walk models, including projections o
 
 mod4 <- stan(data = stan_data,
              file = here("Labs/Lab7/lka4.stan"))
-mod4
+#mod4
 
 # Plot projections
 res2=mod4 %>% 
@@ -194,25 +194,29 @@ res2_p=mod4 %>%
   mutate(year=years[nyears]+p)
 
 ggplot(lka, aes(year, logit_ratio)) +
-  geom_point() + 
-  geom_line( lty = 2) + 
-  #geom_ribbon(aes(ymin = logit_ratio - se, 
-  #                ymax = logit_ratio + se, 
-  #                fill =  source), alpha = 0.1) + 
-  geom_line(data = res, aes(year, .value, col = "RW1")) + 
-  geom_ribbon(data = res, aes(y = .value, ymin = .lower, ymax = .upper, fill = "RW1"), alpha = 0.2)+
+  geom_point(aes( color = source)) + 
+  geom_line(aes( color = source), lty = 2) + 
+  geom_ribbon(aes(ymin = logit_ratio - se, 
+                  ymax = logit_ratio + se, 
+                  fill =  source), alpha = 0.1) + 
+   geom_line(data = res_linear, aes(year, .value, col = "Linear fit")) + 
+  geom_ribbon(data = res_linear, aes(y = .value, ymin = .lower, ymax = .upper, fill = "Linear fit"), alpha = 0.2)+
+  geom_line(data = res_linear_p, aes(year, .value,col="Linear fit projections")) + 
+  geom_ribbon(data = res_linear_p, aes(y = .value, ymin = .lower, ymax = .upper,fill="Linear fit projections"), alpha = 0.2) +
+  geom_line(data = res, aes(year, .value, col = "RW1 fit")) + 
+  geom_ribbon(data = res, aes(y = .value, ymin = .lower, ymax = .upper, fill = "RW1 fit"), alpha = 0.2)+
   geom_line(data = res_p, aes(year, .value,col="RW1 projections")) + 
   geom_ribbon(data = res_p, aes(y = .value, ymin = .lower, ymax = .upper,fill="RW1 projections"), alpha = 0.2) +
   
-   geom_line(data = res2, aes(year, .value, col = "RW2")) + 
-  geom_ribbon(data = res2, aes(y = .value, ymin = .lower, ymax = .upper, fill = "RW2"), alpha = 0.2)+
+   geom_line(data = res2, aes(year, .value, col = "RW2 fit")) + 
+  geom_ribbon(data = res2, aes(y = .value, ymin = .lower, ymax = .upper, fill = "RW2 fit"), alpha = 0.2)+
   
   geom_line(data = res2_p, aes(year, .value,col="RW2 projections")) + 
   geom_ribbon(data = res2_p, aes(y = .value, ymin = .lower, ymax = .upper,fill="RW2 projections"), alpha = 0.2)+
   
   theme_bw()+
   labs(title = "Ratio of neonatal to other child mortality (logged), Sri Lanka",
-       y = "log ratio")
+       y = "log ratio") 
 
 ```
 
@@ -233,7 +237,7 @@ stan_data <- list(y = lka_no_VR$logit_ratio, year_i = observed_years - years[1]+
                   mid_year = mean(years), se = lka_no_VR$se, P = 18)
 mod5 <- stan(data = stan_data,
              file = here("Labs/Lab7/lka4.stan"))
-mod5
+#mod5
 
 # Plot projections
 res3=mod5 %>% 
@@ -249,11 +253,11 @@ res3_p=mod5 %>%
 
 
 ggplot(lka, aes(year, logit_ratio)) +
-  geom_point() + 
-  geom_line( lty = 2) + 
- # geom_ribbon(aes(ymin = logit_ratio - se,
-#                 ymax = logit_ratio + se,
-#                 fill =  source), alpha = 0.1) +
+  geom_point(aes( color = source)) + 
+  geom_line(aes( color = source), lty = 2) + 
+  geom_ribbon(aes(ymin = logit_ratio - se, 
+                  ymax = logit_ratio + se, 
+                  fill =  source), alpha = 0.1) + 
   geom_line(data = res2, aes(year, .value, col = "VR")) +
   geom_ribbon(data = res2, aes(y = .value, ymin = .lower, ymax = .upper, fill = "VR"), alpha = 0.2)+
   geom_line(data = res2_p, aes(year, .value,col="VR projections")) +
@@ -267,11 +271,15 @@ ggplot(lka, aes(year, logit_ratio)) +
   
   theme_bw()+
   labs(title = "Ratio of neonatal to other child mortality (logged), Sri Lanka",
-       y = "log ratio")
+       y = "log ratio", subtitle = "RW2 fits with and without VR data")
 
 ```
+
+We note that by removing the VR data, the 95% credible intervals around the fitted values is smaller. The model fitted without the VR data also produces a smaller credible interval for long-term projections. 
 
 ## Question 6
 
 Briefly comment on which model you think is most appropriate, or an alternative model that would be more appropriate in this context. 
+
+From the results in Question 4, RW1 appears to be a better fit since the projections are close to that of the RW2 while also having smaller credible intervals.
 
